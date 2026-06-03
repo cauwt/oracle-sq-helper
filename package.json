@@ -1,0 +1,25 @@
+{
+  "name": "oracle-sql-helper",
+  "displayName": "Oracle SQL Helper",
+  "description": "Helper for Oracle SQL",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.122.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "sql",
+      "aliases": ["SQL", "sql"],
+      "extensions": [".sql"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "sql",
+      "scopeName": "source.sql",
+      "path": "./syntaxes/sql.tmLanguage.json"
+    }]
+  }
+}
