@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-
+import * as nearley from 'nearley';
+import {grammar} from './sqlGrammar'; 
 // 有效的 SQL 关键字（白名单，可根据需要扩展）
 const validKeywords = new Set([
     'SELECT', 'FROM', 'WHERE', 'INSERT', 'INTO', 'UPDATE',
@@ -204,5 +205,16 @@ export function diagnoseSql(sqlContent: string): vscode.Diagnostic[] {
     for (const rule of allRules) {
         diagnostics = diagnostics.concat(rule.check(sqlContent));
     }
+    // 创建解析器实例，传入自定义 lexer
+    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar.ParserRules),grammar.lexer);
+	 try {
+        // 尝试解析整个 SQL
+        parser.feed(sqlContent);
+        // 解析成功，没有错误
+        return [];
+    } catch (err: any) {
+        // 解析失败，生成诊断信息
+        const errorMessage = err.message || '语法错误';
+	}
     return diagnostics;
 }
