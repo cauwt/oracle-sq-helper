@@ -2,7 +2,6 @@ node_modules
 out
 dist
 coverage
-.vscode
 *.log
 *.tsbuildinfo
 *.vsix
