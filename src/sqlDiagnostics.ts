@@ -18,8 +18,8 @@ const invalidKeywordRule: DiagnosticRule = {
     check: (sql: string) => {
         const diagnostics: vscode.Diagnostic[] = [];
         // 匹配单词边界内的“大写单词”（忽略字符串内的内容）
-        // 简化：匹配所有 [A-Z_a-z][A-Z0-9_]*，并检查是否在白名单中
-        const keywordRegex = /\b([A-Za-z_][A-Z0-9_]*)\b/g;
+        // 简化：匹配所有 [A-Z_][A-Z0-9_]*，并检查是否在白名单中
+        const keywordRegex = /\b([A-Z_][A-Z0-9_]*)\b/g;
         let match;
         while ((match = keywordRegex.exec(sql)) !== null) {
             const word = match[1].toUpperCase();
