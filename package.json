@@ -4,11 +4,12 @@
   "description": "Helper for Oracle SQL",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.122.0"
+    "vscode": "^1.100.0"
   },
   "categories": [
     "Programming Languages"
   ],
+  "main": "./out/extension.js",
   "contributes": {
     "languages": [{
       "id": "sql",
@@ -21,5 +22,13 @@
       "scopeName": "source.sql",
       "path": "./syntaxes/sql.tmLanguage.json"
     }]
-  }
-}
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.100.0",
+    "typescript": "^5.0.0"
+  }}
