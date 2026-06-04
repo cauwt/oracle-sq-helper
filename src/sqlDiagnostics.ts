@@ -7,6 +7,22 @@ const validKeywords = new Set([
     'ON', 'ORDER', 'BY', 'GROUP', 'HAVING', 'LIMIT', 'OFFSET'
 ]);
 
+// 辅助函数：将字符串偏移量转换为 vscode.Position
+function documentPositionToLocation(content: string, offset: number): vscode.Position {
+    let line = 0;
+    let char = 0;
+    for (let i = 0; i < offset; i++) {
+        if (content[i] === '\n') {
+            line++;
+            char = 0;
+        } else {
+            char++;
+        }
+    }
+    return new vscode.Position(line, char);
+}
+
+
 interface DiagnosticRule {
     name: string;
     check: (sql: string) => vscode.Diagnostic[];
@@ -41,21 +57,6 @@ const invalidKeywordRule: DiagnosticRule = {
         return diagnostics;
     }
 };
-
-// 辅助函数：将字符串偏移量转换为 vscode.Position
-function documentPositionToLocation(content: string, offset: number): vscode.Position {
-    let line = 0;
-    let char = 0;
-    for (let i = 0; i < offset; i++) {
-        if (content[i] === '\n') {
-            line++;
-            char = 0;
-        } else {
-            char++;
-        }
-    }
-    return new vscode.Position(line, char);
-}
 
 // 规则2: 检测字符串引号是否闭合（单引号）
 const unclosedStringRule: DiagnosticRule = {
