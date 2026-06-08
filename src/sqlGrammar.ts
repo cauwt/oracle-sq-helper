@@ -3,17 +3,19 @@
 // Bypasses TS6133. Allow declared but unused functions.
 // @ts-ignore
 function id(d: any[]): any { return d[0]; }
-declare var WS: any;
 declare var KW_SELECT: any;
 declare var KW_FROM: any;
-declare var COMMA: any;
-declare var IDENT: any;
-declare var DOT: any;
 declare var KW_AS: any;
+declare var KW_LEFT: any;
+declare var KW_JOIN: any;
+declare var IDENT: any;
+declare var COMMA: any;
+declare var WS: any;
+declare var DOT: any;
 
 
 import lexer from './sqlLexer';
-
+import {toKeyword, toIdent} from './sqlLexer';
 
 interface NearleyToken {
   value: any;
@@ -46,27 +48,84 @@ const grammar: Grammar = {
   Lexer: lexer,
   ParserRules: [
     {"name": "main", "symbols": ["select_statement"], "postprocess": id},
-    {"name": "select_statement$ebnf$1", "symbols": [(lexer.has("WS") ? {type: "WS"} : WS)], "postprocess": id},
-    {"name": "select_statement$ebnf$1", "symbols": [], "postprocess": () => null},
-    {"name": "select_statement", "symbols": ["select_statement$ebnf$1", (lexer.has("KW_SELECT") ? {type: "KW_SELECT"} : KW_SELECT), (lexer.has("WS") ? {type: "WS"} : WS), "select_list", (lexer.has("WS") ? {type: "WS"} : WS), (lexer.has("KW_FROM") ? {type: "KW_FROM"} : KW_FROM), (lexer.has("WS") ? {type: "WS"} : WS), "from_clause"]},
+    {"name": "select_statement", "symbols": ["kw_select", "_", "select_list", "_", "kw_from", "_", "from_clause"]},
     {"name": "select_list$ebnf$1", "symbols": []},
-    {"name": "select_list$ebnf$1$subexpression$1$ebnf$1", "symbols": [(lexer.has("WS") ? {type: "WS"} : WS)], "postprocess": id},
+    {"name": "select_list$ebnf$1$subexpression$1$ebnf$1", "symbols": ["_"], "postprocess": id},
     {"name": "select_list$ebnf$1$subexpression$1$ebnf$1", "symbols": [], "postprocess": () => null},
-    {"name": "select_list$ebnf$1$subexpression$1$ebnf$2", "symbols": [(lexer.has("WS") ? {type: "WS"} : WS)], "postprocess": id},
+    {"name": "select_list$ebnf$1$subexpression$1$ebnf$2", "symbols": ["_"], "postprocess": id},
     {"name": "select_list$ebnf$1$subexpression$1$ebnf$2", "symbols": [], "postprocess": () => null},
-    {"name": "select_list$ebnf$1$subexpression$1", "symbols": ["select_list$ebnf$1$subexpression$1$ebnf$1", (lexer.has("COMMA") ? {type: "COMMA"} : COMMA), "select_list$ebnf$1$subexpression$1$ebnf$2", "select_item"]},
+    {"name": "select_list$ebnf$1$subexpression$1", "symbols": ["select_list$ebnf$1$subexpression$1$ebnf$1", "comma", "select_list$ebnf$1$subexpression$1$ebnf$2", "select_item"]},
     {"name": "select_list$ebnf$1", "symbols": ["select_list$ebnf$1", "select_list$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
     {"name": "select_list", "symbols": ["select_item", "select_list$ebnf$1"]},
-    {"name": "select_item", "symbols": ["expression"]},
-    {"name": "select_item", "symbols": ["expression", (lexer.has("WS") ? {type: "WS"} : WS), "alias"]},
-    {"name": "from_clause", "symbols": ["table_ref"]},
-    {"name": "table_ref", "symbols": [(lexer.has("IDENT") ? {type: "IDENT"} : IDENT), (lexer.has("WS") ? {type: "WS"} : WS), "alias"], "postprocess": ([table,ws,alias]) => ({type:'table_ref',offset:table.offset,text:table.text+ws.text+alias.text})},
-    {"name": "table_ref", "symbols": [(lexer.has("IDENT") ? {type: "IDENT"} : IDENT), (lexer.has("DOT") ? {type: "DOT"} : DOT), (lexer.has("IDENT") ? {type: "IDENT"} : IDENT), (lexer.has("WS") ? {type: "WS"} : WS), "alias"], "postprocess": ([schema,dot,table]) => ({type:'table_ref',offset:schema.offset,text:schema.text+dot.text+table.text})},
-    {"name": "expression", "symbols": ["column_ref"]},
-    {"name": "column_ref", "symbols": [(lexer.has("IDENT") ? {type: "IDENT"} : IDENT), (lexer.has("DOT") ? {type: "DOT"} : DOT), (lexer.has("IDENT") ? {type: "IDENT"} : IDENT)], "postprocess": ([table,dot,column]) => ({type:'column_ref',offset:table.offset,text:table.text+dot.text+column.text})},
-    {"name": "column_ref", "symbols": [(lexer.has("IDENT") ? {type: "IDENT"} : IDENT)], "postprocess": ([column]) => ({type:'column_ref',offset:column.offset,text:column.text})},
-    {"name": "alias", "symbols": [(lexer.has("KW_AS") ? {type: "KW_AS"} : KW_AS), (lexer.has("WS") ? {type: "WS"} : WS), (lexer.has("IDENT") ? {type: "IDENT"} : IDENT)], "postprocess": ([as,ws,alias]) => ({type:'alias',offset:as.offset,text:as.text+ws.text+alias.text})},
-    {"name": "alias", "symbols": [(lexer.has("IDENT") ? {type: "IDENT"} : IDENT)], "postprocess": ([alias]) => ({type:'alias',offset:alias.offset,text:alias.text})}
+    {"name": "select_item", "symbols": ["expression"], "postprocess": ([column_ref]) => ({type:'select_item',
+        offset:column_ref.offset,
+        line:column_ref.line,
+        col:column_ref.col,
+        text:column_ref.text,
+        value:column_ref.value,
+        alias:null})},
+    {"name": "select_item", "symbols": ["expression", "_", "alias"], "postprocess": ([column_ref,_,alias]) => ({type:'select_item',
+        offset:column_ref.offset,
+        line:column_ref.line,
+        col:column_ref.col,
+        text:column_ref.text+_.text+alias.text,
+        value:column_ref.value+' AS '+alias.value,
+        alias:alias.value})},
+    {"name": "from_clause", "symbols": ["table_ref"], "postprocess": id},
+    {"name": "table_ref", "symbols": ["ident", "_", "alias"], "postprocess":  ([table,ws,alias]) => ({type:'table_ref',
+        offset:table.offset,
+        line:table.line,
+        col:table.col,
+        text:table.text+ws.text+alias.text,
+        value:table.value+' AS '+alias.value,
+        schema:null,
+        table:table.value,
+        alias:alias.value})},
+    {"name": "table_ref", "symbols": ["ident", "dot", "ident", "_", "alias"], "postprocess":  ([schema,dot,table,_,alias]) => ({type:'table_ref',
+        offset:schema.offset,
+        text:schema.text+dot.text+table.text+_.text+alias.text,
+        value:schema.value+dot.value+table.value+' AS '+alias.value,
+        													        schema:schema.value,
+        													        table:table.value,
+        													        alias:alias.value})},
+    {"name": "expression", "symbols": ["column_ref"], "postprocess": id},
+    {"name": "column_ref", "symbols": ["ident", "dot", "ident"], "postprocess":  ([table,dot,column]) => ({type:'column_ref',
+        offset:table.offset,
+        		  line:table.line,
+        		  col:table.col,
+        		  table:table.value,
+        		  column:column.value,
+        		  text:table.text+dot.text+column.text,
+        		  value:table.value+dot.value+column.value})},
+    {"name": "column_ref", "symbols": ["ident"], "postprocess":  ([column]) => ({type:'column_ref',
+        offset:column.offset,
+        line:column.line,
+        col:column.col,
+        table:null,
+        column:column.value,
+        text:column.text,
+        value:column.value})},
+    {"name": "alias", "symbols": ["kw_as", "_", "ident"], "postprocess":  ([as,ws,alias]) => ({type:'alias',
+        offset:as.offset,
+        line:as.line,
+        col:as.col,
+        text:as.text+ws.text+alias.text,
+        value:alias.value})},
+    {"name": "alias", "symbols": ["ident"], "postprocess":  ([alias]) => ({type:'alias',
+        offset:alias.offset,
+        line:alias.line,
+        col:alias.col,
+        text:alias.text,
+        value:alias.value})},
+    {"name": "kw_select", "symbols": [(lexer.has("KW_SELECT") ? {type: "KW_SELECT"} : KW_SELECT)], "postprocess": ([d]) => toKeyword(d)},
+    {"name": "kw_from", "symbols": [(lexer.has("KW_FROM") ? {type: "KW_FROM"} : KW_FROM)], "postprocess": ([d]) => toKeyword(d)},
+    {"name": "kw_as", "symbols": [(lexer.has("KW_AS") ? {type: "KW_AS"} : KW_AS)], "postprocess": ([d]) => toKeyword(d)},
+    {"name": "kw_left", "symbols": [(lexer.has("KW_LEFT") ? {type: "KW_LEFT"} : KW_LEFT)], "postprocess": ([d]) => toKeyword(d)},
+    {"name": "kw_join", "symbols": [(lexer.has("KW_JOIN") ? {type: "KW_JOIN"} : KW_JOIN)], "postprocess": ([d]) => toKeyword(d)},
+    {"name": "ident", "symbols": [(lexer.has("IDENT") ? {type: "IDENT"} : IDENT)], "postprocess": ([d]) => toIdent(d)},
+    {"name": "comma", "symbols": [(lexer.has("COMMA") ? {type: "COMMA"} : COMMA)], "postprocess": ([d]) => toIdent(d)},
+    {"name": "_", "symbols": [(lexer.has("WS") ? {type: "WS"} : WS)], "postprocess": ([d]) => toIdent(d)},
+    {"name": "dot", "symbols": [(lexer.has("DOT") ? {type: "DOT"} : DOT)], "postprocess": ([d]) => toIdent(d)}
   ],
   ParserStart: "main",
 };
