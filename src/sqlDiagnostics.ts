@@ -210,8 +210,9 @@ export function diagnoseSql(sqlContent: string): vscode.Diagnostic[] {
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar),{lexer: lexer as any});
 	 try {
         // 尝试解析整个 SQL
-        parser.feed(sqlContent);
+        const { results } = parser.feed(sqlContent);
         // 解析成功，没有错误
+		console.log('SQL 解析成功:', results);
         return [];
     } catch (err: any) {
         // 解析失败，生成诊断信息

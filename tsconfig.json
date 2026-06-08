@@ -9,5 +9,6 @@
     "rootDir": "src"
   },
   "allowJs": true,
+  "types": ["node"],   // 👈 添加这一行
   "exclude": ["node_modules", ".vscode-test"]
 }
