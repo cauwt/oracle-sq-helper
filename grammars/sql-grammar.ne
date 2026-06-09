@@ -17,29 +17,53 @@ main -> select_statement {% id %}
 # SELECT 语句
 select_statement -> 
     kw_select _ select_list
-    _ kw_from _ from_clause
+    _ kw_from _ from_clause{%([kw_select,_1,select_list,_2,kw_from,_3,from_clause])=>({type:'select_statement',
+																				   offset:kw_select.offset,
+																				   line:kw_select.line,
+																				   col:kw_select.col,
+																				   text:kw_select.text+_1.text+select_list.text+_2.text+kw_from.text+_3.text+from_clause.text,
+																					   select_list:select_list.select_items,
+																					   from_table: {source_table:{schema:from_clause.schema,
+																												  table:from_clause.table},
+																								   alias:from_clause.alias},
+																					   line_breaks:_1.lineBreaks+_2.lineBreaks+_3.lineBreaks
+																					  }
+																					  
+																					 )%}
+
 
 # ==================== SELECT 列表 ====================
 
 select_list -> select_item (_:? comma _:? select_item):*
 {%
-    d => [d[0], ...d[1].map((item: any) => item[3])]
+    d => {let v= [d[0], ...d[1].map((item: any) => item[3])];
+		 return {type:'select_list',
+				offset:v[0].offset,
+				line:v[0].line,
+				col:v[0].col,
+				text:[v.map((item: any) => item.text)].join(''),
+				select_items:v
+				}
+		  ;
+		 }
 %}
 
 select_item -> 
-    expression {%([column_ref]) => ({type:'select_item',
-									 offset:column_ref.offset,
-									 line:column_ref.line,
-									 col:column_ref.col,
-									 text:column_ref.text,
-									 value:column_ref.value,
+    expression {%([expression]) => ({type:'select_item',
+									 offset:expression.offset,
+									 line:expression.line,
+									 col:expression.col,
+									 text:expression.text,
+									 value:expression.value,
+									 source_columns:expression.source_columns,
 									 alias:null})%}
-	| expression _ alias {%([column_ref,_,alias]) => ({type:'select_item',
-													   offset:column_ref.offset,
-													   line:column_ref.line,
-													   col:column_ref.col,
-													   text:column_ref.text+_.text+alias.text,
-													   value:column_ref.value+' AS '+alias.value,
+	| expression _ alias {%([expression,_,alias]) => ({type:'select_item',
+													   offset:expression.offset,
+													   line:expression.line,
+													   col:expression.col,
+													   text:expression.text+_.text+alias.text,
+													   value:expression.value+' AS '+alias.value,
+													   source_columns:expression.source_columns,
 													   alias:alias.value})%}
 
 
@@ -66,13 +90,20 @@ table_ref -> ident _ alias{% ([table,ws,alias]) => ({type:'table_ref',
 													        alias:alias.value})%}
 
 
-# ==================== 表达式 ====================
-expression -> column_ref {%id%}
 
-# 列引用（必须带表别名）
-# 注意：这里暂时允许不带别名的列引用，验证在解析器中进行
+# ==================== 表达式 ====================
+expression -> column_ref {%([column_ref]) => ({type:'expression',
+													 offset:column_ref.offset,
+													 line:column_ref.line,
+													 col:column_ref.col,
+													 text:column_ref.text,
+													 value:column_ref.value,
+													 schema:null,
+													 source_columns:[{table:column_ref.table,column:column_ref.column}]})%}
+
+# 列引用
 column_ref -> ident dot ident{% ([table,dot,column]) => ({type:'column_ref',
-												offset:table.offset,
+												        offset:table.offset,
 														  line:table.line,
 														  col:table.col,
 														  table:table.value,
@@ -89,11 +120,12 @@ column_ref -> ident dot ident{% ([table,dot,column]) => ({type:'column_ref',
 								   value:column.value})%}
 
 # 别名
-alias -> kw_as _ ident{% ([as,ws,alias]) => ({type:'alias',
+alias -> kw_as _ ident{% ([as,_,alias]) => ({type:'alias',
 											  offset:as.offset,
 											  line:as.line,
 											  col:as.col,
-											  text:as.text+ws.text+alias.text,
+											  line_breaks:_.lineBreaks,
+											  text:as.text+_.text+alias.text,
 											  value:alias.value})%}
     | ident{% ([alias]) => ({type:'alias',
 							 offset:alias.offset,
@@ -112,4 +144,3 @@ ident -> %IDENT{%([d]) => toIdent(d)%}
 comma -> %COMMA {%([d]) => toIdent(d)%}
 _ -> %WS {%([d]) => toIdent(d)%}
 dot -> %DOT {%([d]) => toIdent(d)%}
-
