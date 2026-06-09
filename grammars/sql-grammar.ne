@@ -99,7 +99,14 @@ expression -> column_ref {%([column_ref]) => ({type:'expression',
 													 text:column_ref.text,
 													 value:column_ref.value,
 													 schema:null,
-													 source_columns:[{table:column_ref.table,column:column_ref.column}]})%}
+													 source_columns:[{table:column_ref.table,
+																	  column:column_ref.column,
+																	  start:{offset:column_ref.offset,
+																			 line:column_ref.line,
+																			 col:column_ref.col},
+																	 end:{offset:column_ref.offset+column_ref.text.length,
+																		  line:column_ref.line,
+																		  col:column_ref.col+column_ref.text.length}}]})%}
 
 # 列引用
 column_ref -> ident dot ident{% ([table,dot,column]) => ({type:'column_ref',
