@@ -14,7 +14,7 @@ interface DiagnosticRule {
 	check: (results: any) => vscode.Diagnostic[];
 }
 
-// 规则6: 列没有带表名
+// 规则1: 列没有带表名
 const missingTableInColumnRule: DiagnosticRule = {
 	name: 'missing-table-in-column',
 	check: (results: any) => {
@@ -50,11 +50,43 @@ const missingTableInColumnRule: DiagnosticRule = {
 	}
 };
 
+// 规则2：表没有带schema
+const missingSchemaInTableRule: DiagnosticRule = {
+	name: 'missing-schema-in-table',
+	check: (results: any) => {
+		const diagnostics: vscode.Diagnostic[] = [];
+		try {
+			// 查找解析结果中的 tables，检查是否有未带schema的表
+			const select_statement = results.find((node: any) => node.type === 'select_statement');
+			if (select_statement) {
+				const from_table = select_statement.from_table;
+				const source_table = from_table.source_table;
+				if (!source_table.schema) {
+					const range = new vscode.Range(
+						new vscode.Position(from_table.start.line - 1, from_table.start.col - 1),
+						new vscode.Position(from_table.end.line - 1, from_table.end.col - 1)
+					);
+					diagnostics.push(new vscode.Diagnostic(
+						range,
+						'表未带schema',
+						vscode.DiagnosticSeverity.Warning
+					));
+				};
+			}
+		} catch (err: any) {
+			// 解析失败，生成诊断信息
+			const errorMessage = err.message || '语法错误';
+		}
+		return diagnostics;
+	}
+};
+
 // 导出主诊断函数，组合所有规则
 export function diagnoseSql(sqlContent: string): vscode.Diagnostic[] {
 	// 创建解析器实例，传入自定义 lexer
 	const allRules: DiagnosticRule[] = [
-		missingTableInColumnRule
+		missingTableInColumnRule,
+		missingSchemaInTableRule
 	];
 	let diagnostics: vscode.Diagnostic[] = [];
 	const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), { lexer: lexer as any });

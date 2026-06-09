@@ -25,6 +25,8 @@ select_statement ->
 																					   select_list:select_list.select_items,
 																					   from_table: {source_table:{schema:from_clause.schema,
 																												  table:from_clause.table},
+																									start:from_clause.start,
+																									end:from_clause.end,
 																								   alias:from_clause.alias},
 																					   line_breaks:_1.lineBreaks+_2.lineBreaks+_3.lineBreaks
 																					  }
@@ -73,9 +75,12 @@ from_clause -> table_ref {%id%}
 
 # 表引用（必须带别名）
 table_ref -> ident _ alias{% ([table,ws,alias]) => ({type:'table_ref',
-													 offset:table.offset,
-													 line:table.line,
-													 col:table.col,
+													 start:{offset:table.offset,
+														   line:table.line,
+														   col:table.col},
+													 end:{offset:table.offset+table.text.length,
+														   line:table.line,
+														   col:table.col+table.text.length},
 													 text:table.text+ws.text+alias.text,
 													 value:table.value+' AS '+alias.value,
 													 schema:null,
@@ -151,3 +156,4 @@ ident -> %IDENT{%([d]) => toIdent(d)%}
 comma -> %COMMA {%([d]) => toIdent(d)%}
 _ -> %WS {%([d]) => toIdent(d)%}
 dot -> %DOT {%([d]) => toIdent(d)%}
+
