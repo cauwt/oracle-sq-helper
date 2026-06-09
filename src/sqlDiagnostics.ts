@@ -11,19 +11,15 @@ const validKeywords = new Set([
 
 interface DiagnosticRule {
 	name: string;
-	check: (sql: string) => vscode.Diagnostic[];
+	check: (results: any) => vscode.Diagnostic[];
 }
 
 // 规则6: 列没有带表名
 const missingTableInColumnRule: DiagnosticRule = {
 	name: 'missing-table-in-column',
-	check: (sql: string) => {
+	check: (results: any) => {
 		const diagnostics: vscode.Diagnostic[] = [];
-		// 创建解析器实例，传入自定义 lexer
-		const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), { lexer: lexer as any });
 		try {
-			// 尝试解析整个 SQL
-			const { results } = parser.feed(sql);
 			// 查找解析结果中的 source_columns，检查是否有未带表名的列
 			const select_statement = results.find((node: any) => node.type === 'select_statement');
 			if (select_statement) {
@@ -56,12 +52,25 @@ const missingTableInColumnRule: DiagnosticRule = {
 
 // 导出主诊断函数，组合所有规则
 export function diagnoseSql(sqlContent: string): vscode.Diagnostic[] {
+	// 创建解析器实例，传入自定义 lexer
 	const allRules: DiagnosticRule[] = [
 		missingTableInColumnRule
 	];
 	let diagnostics: vscode.Diagnostic[] = [];
-	for (const rule of allRules) {
-		diagnostics = diagnostics.concat(rule.check(sqlContent));
+	const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), { lexer: lexer as any });
+	try {
+		// 尝试解析整个 SQL
+		const { results } = parser.feed(sqlContent);
+		for (const rule of allRules) {
+			diagnostics = diagnostics.concat(rule.check(results));
+		}
+	} catch (err: any) {
+		// 解析失败，生成诊断信息
+		const errorMessage = err.message || '语法错误';
+		const lineMatch = errorMessage.match(/line (\d+)/);
+		const colMatch = errorMessage.match(/col (\d+)/);
+		const line = lineMatch ? parseInt(lineMatch[1], 10) - 1 : 0;
+		const col = colMatch ? parseInt(colMatch[1], 10) - 1 : 0;
 	}
 	return diagnostics;
 }
