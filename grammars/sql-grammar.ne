@@ -22,7 +22,9 @@ select_statement ->
 # ==================== SELECT 列表 ====================
 
 select_list -> select_item (_:? comma _:? select_item):*
-
+{%
+    d => [d[0], ...d[1].map((item: any) => item[3])]
+%}
 
 select_item -> 
     expression {%([column_ref]) => ({type:'select_item',

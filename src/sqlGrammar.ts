@@ -56,7 +56,9 @@ const grammar: Grammar = {
     {"name": "select_list$ebnf$1$subexpression$1$ebnf$2", "symbols": [], "postprocess": () => null},
     {"name": "select_list$ebnf$1$subexpression$1", "symbols": ["select_list$ebnf$1$subexpression$1$ebnf$1", "comma", "select_list$ebnf$1$subexpression$1$ebnf$2", "select_item"]},
     {"name": "select_list$ebnf$1", "symbols": ["select_list$ebnf$1", "select_list$ebnf$1$subexpression$1"], "postprocess": (d) => d[0].concat([d[1]])},
-    {"name": "select_list", "symbols": ["select_item", "select_list$ebnf$1"]},
+    {"name": "select_list", "symbols": ["select_item", "select_list$ebnf$1"], "postprocess": 
+        d => [d[0], ...d[1].map((item: any) => item[3])]
+        },
     {"name": "select_item", "symbols": ["expression"], "postprocess": ([column_ref]) => ({type:'select_item',
         offset:column_ref.offset,
         line:column_ref.line,
