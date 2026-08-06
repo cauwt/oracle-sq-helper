@@ -36,8 +36,11 @@ export function activate(context: vscode.ExtensionContext) {
             const [, schema, table] = match;
 
             // 构建目标文件相对路径：schema/sp_table.pro
-            const relativePath = `${schema.toLowerCase()}/sp_${table.toLowerCase()}.pro`;
-
+            let relativePath = `${schema.toLowerCase()}/sp_${table.toLowerCase()}.pro`;
+			// 如果schema为ods，则使用 ods/table.sql 的路径
+			if (schema.toLowerCase() === 'ods') {
+				relativePath = `${schema.toLowerCase()}/${table.toLowerCase()}.sql`;
+			}
             // 获取当前文件所在的工作区根目录
             const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
             if (!workspaceFolder) {
