@@ -5,21 +5,22 @@ import { diagnoseSql } from './sqlDiagnostics';
 let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(context: vscode.ExtensionContext) {
+	const languageId='oracle-sql';
     // 初始化诊断集合
-    diagnosticCollection = vscode.languages.createDiagnosticCollection('sql');
+    diagnosticCollection = vscode.languages.createDiagnosticCollection(languageId);
     context.subscriptions.push(diagnosticCollection);
 
     // 当活动文本编辑器变化时，更新诊断
     const updateDiagnostics = () => {
         const editor = vscode.window.activeTextEditor;
-        if (editor && editor.document.languageId === 'sql') {
+        if (editor && editor.document.languageId === languageId) {
             const diagnostics = diagnoseSql(editor.document.getText());
             diagnosticCollection.set(editor.document.uri, diagnostics);
         }
     };
 
     // 注册表名跳转定义提供者
-    const definitionProvider = vscode.languages.registerDefinitionProvider(['sql','oracle-sql'], {
+    const definitionProvider = vscode.languages.registerDefinitionProvider(languageId, {
         provideDefinition: async (document, position, token) => {
             // 获取当前光标所在位置的单词（允许包含点号）
             const wordRange = document.getWordRangeAtPosition(
