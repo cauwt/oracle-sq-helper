@@ -141,7 +141,6 @@ expression -> column_ref {%([column_ref]) => ({type:'expression',
 													 col:column_ref.col,
 													 text:column_ref.text,
 													 value:column_ref.value,
-													 schema:null,
 													 source_columns:[{table:column_ref.table,
 																	  column:column_ref.column,
 																	  start:{offset:column_ref.offset,
@@ -150,6 +149,13 @@ expression -> column_ref {%([column_ref]) => ({type:'expression',
 																	 end:{offset:column_ref.offset+column_ref.text.length,
 																		  line:column_ref.line,
 																		  col:column_ref.col+column_ref.text.length}}]})%}
+|literal{%([literal]) => ({type:'expression',
+													 offset:literal.offset,
+													 line:literal.line,
+													 col:literal.col,
+													 text:literal.text,
+													 value:literal.value,
+													 source_columns:null})%}
 
 # 列引用
 column_ref -> ident dot ident{% ([table,dot,column]) => ({type:'column_ref',
@@ -185,7 +191,11 @@ alias -> kw_as _ ident{% ([as,_,alias]) => ({type:'alias',
 							 value:alias.value})%}
 
 # 字面量
-literal -> string|number|kw_null|kw_true|kw_false
+literal -> string{%id%}
+|number{%id%}
+|kw_null{%id%}
+|kw_true{%id%}
+|kw_false{%id%}
 # =========================关键字======================================
 kw_select -> %KW_SELECT{%([d]) => toKeyword(d)%}
 kw_from -> %KW_FROM{%([d]) => toKeyword(d)%}
@@ -198,8 +208,8 @@ kw_true -> %KW_TRUE{%([d]) => toKeyword(d)%}
 kw_false -> %KW_FALSE{%([d]) => toKeyword(d)%}
 
 # =========================其他======================================
-string ->%STRING
-number ->%NUMBER
+string ->%STRING{%id%}
+number ->%NUMBER{%id%}
 ident -> %IDENT{%([d]) => toIdent(d)%}
 comma -> %COMMA {%([d]) => toIdent(d)%}
 _ -> %WS {%([d]) => toIdent(d)%}

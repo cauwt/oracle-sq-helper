@@ -10,6 +10,10 @@
     "Programming Languages"
   ],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:sql",
+    "onLanguage:oracle-sql"
+  ],
   "contributes": {
     "languages": [
       {
@@ -22,13 +26,29 @@
           ".sql"
         ],
         "configuration": "./language-configuration.json"
+      },
+	        {
+        "id": "oracle-sql",
+        "aliases": [
+          "PL/SQL"
+        ],
+        "extensions": [
+          ".pro"
+        ],
+        "configuration": "./language-configuration.json"
       }
+
     ],
     "grammars": [
       {
         "language": "sql",
         "scopeName": "source.sql",
         "path": "./syntaxes/sql.tmLanguage.json"
+      },
+      {
+        "language": "oracle-sql",
+        "scopeName": "source.oracle-sql",
+        "path": "./syntaxes/oracle-sql.tmLanguage.plist"
       }
     ]
   },
