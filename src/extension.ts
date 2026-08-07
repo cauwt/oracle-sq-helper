@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { provideDefinition } from './sqlDefinitionLink';
 import { diagnoseSql } from './sqlDiagnostics';
 
 // 诊断集合（用于展示错误波浪线）
@@ -21,48 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // 注册表名跳转定义提供者
     const definitionProvider = vscode.languages.registerDefinitionProvider(languageId, {
-        provideDefinition: async (document, position, token) => {
-            // 获取当前光标所在位置的单词（允许包含点号）
-            const wordRange = document.getWordRangeAtPosition(
-                position,
-                /[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?/
-            );
-            if (!wordRange) return null;
-
-            const text = document.getText(wordRange);
-            // 匹配 schema.table 格式
-            const match = text.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)$/);
-            if (!match) return null;
-
-            const [, schema, table] = match;
-
-            // 构建目标文件相对路径：schema/sp_table.pro
-            let relativePath = `${schema.toLowerCase()}/sp_${table.toLowerCase()}.pro`;
-			// 如果schema为ods，则使用 ods/table.sql 的路径
-			if (schema.toLowerCase() === 'ods') {
-				relativePath = `${schema.toLowerCase()}/${table.toLowerCase()}.sql`;
-			}
-            // 获取当前文件所在的工作区根目录
-            const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-            if (!workspaceFolder) {
-                vscode.window.showErrorMessage('未找到工作区根目录');
-                return null;
-            }
-
-            // 拼接得到完整 URI
-            const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, relativePath);
-
-            // 检查文件是否存在
-            try {
-                await vscode.workspace.fs.stat(fileUri);
-            } catch {
-                vscode.window.showErrorMessage(`表定义文件不存在: ${fileUri}`);
-                return null;
-            }
-
-            // 返回位置（跳转到文件开头）
-            return new vscode.Location(fileUri, new vscode.Position(0, 0));
-        }
+        provideDefinition: provideDefinition
     });
 
     context.subscriptions.push(definitionProvider);
