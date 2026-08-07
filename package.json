@@ -18,6 +18,7 @@
     "url": "https://github.com/cauwt/oracle-sql-helper.git"
   },
   "license": "MIT",
+  "icon": "images/icon.png",
     "contributes": {
     "languages": [
 	    {
