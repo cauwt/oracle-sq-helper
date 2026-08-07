@@ -51,7 +51,7 @@ function formatLine(line: string): string {
     const commentPart = line.substring(commentIndex);
 
     // 提取非空白前缀
-    const trimmedBefore = beforeWithWhitespace.replace(/\s+$/, '');
+    const trimmedBefore = beforeWithWhitespace.trimEnd();
     const whitespaceBetween = beforeWithWhitespace.substring(trimmedBefore.length);
 
     // 规则1：只有空白 → 对齐到第5列（一个制表符）
@@ -62,21 +62,16 @@ function formatLine(line: string): string {
     // 计算非空白部分的显示宽度
     const width = getDisplayWidth(trimmedBefore);
     const whitespaceWidth = getDisplayWidth(whitespaceBetween);
-    const originalStartCol = width + whitespaceWidth; // 原始注释起始列
 
-    // 规则2：宽度 < 99 → 补到99
-    if (width < 99) {
-        const diff = 99 - width;
+    // 规则2：宽度 < 100 → 补到100
+    if (width < 100) {
+        const diff = 100 - width;
         const tabs = Math.floor(diff / 4);
         const spaces = diff % 4;
-        const separator = '\t'.repeat(tabs) + ' '.repeat(spaces);
+        const separator = ' '.repeat(spaces) + '\t'.repeat(tabs);
         return trimmedBefore + separator + commentPart;
-    }
-
-    // 规则3：宽度 >= 99
-    if (originalStartCol > 100) {
-        return trimmedBefore + commentPart; // 去掉所有空白
-    } else {
-        return trimmedBefore + ' ' + commentPart; // 保留一个空格
-    }
+    }else {
+    	// 规则3：宽度 >= 100
+    	return trimmedBefore + ' ' + commentPart; // 去掉所有空白
+	}
 }
