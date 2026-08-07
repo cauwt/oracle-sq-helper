@@ -10,7 +10,15 @@
     "Programming Languages"
   ],
   "main": "./out/extension.js",
-  "contributes": {
+  "activationEvents": [
+    "onLanguage:oracle-sql"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cauwt/oracle-sql-helper.git"
+  },
+  "license": "MIT",
+    "contributes": {
     "languages": [
 	    {
         "id": "oracle-sql",
