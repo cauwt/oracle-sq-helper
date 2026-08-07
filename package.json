@@ -2,6 +2,7 @@
   "name": "oracle-sql-helper",
   "displayName": "Oracle SQL Helper",
   "description": "Helper for Oracle SQL",
+  "publisher": "cauwt",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.100.0"
@@ -39,7 +40,22 @@
         "scopeName": "source.oracle-sql",
         "path": "./syntaxes/oracle-sql.tmLanguage.plist"
       }
-    ]
+    ],
+    "commands": [
+      {
+        "command": "sql.formatComments",
+        "title": "格式化单行注释"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "sql.formatComments",
+          "group": "1_modification",
+          "when": "editorLangId == oracle-sql"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
