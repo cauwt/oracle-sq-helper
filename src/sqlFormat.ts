@@ -51,17 +51,20 @@ function formatLine(line: string): string {
     const commentPart = line.substring(commentIndex);
 
     // 提取非空白前缀
-    const trimmedBefore = beforeWithWhitespace.trimEnd();
-    const whitespaceBetween = beforeWithWhitespace.substring(trimmedBefore.length);
-
+    let trimmedBefore = beforeWithWhitespace.trimEnd();
     // 规则1：只有空白 → 对齐到第5列（一个制表符）
     if (trimmedBefore.length === 0) {
         return '\t' + commentPart;
     }
 
+	// 提取前导白空格：截取前导空格和制表符
+	const leadingWhitespaceMatch = trimmedBefore.match(/^[ \t]*/);
+	let leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : '';
+	leadingWhitespace = optimizeSpacesAndTabs(leadingWhitespace);
+	trimmedBefore = leadingWhitespace + trimmedBefore.trimStart();
+
     // 计算非空白部分的显示宽度
     const width = getDisplayWidth(trimmedBefore);
-    const whitespaceWidth = getDisplayWidth(whitespaceBetween);
 
     // 规则2：宽度 < 100 → 补到100
     if (width < 100) {
@@ -74,4 +77,41 @@ function formatLine(line: string): string {
     	// 规则3：宽度 >= 100
     	return trimmedBefore + ' ' + commentPart; // 去掉所有空白
 	}
+}
+
+/**
+ * 将字符串中的空格和制表符进行优化：
+ * 1. 连续的4个空格 → 1个制表符
+ * 2. 遇到1-3个空格后紧跟一个制表符 → 去除空格，保留制表符
+ * 3. 末尾剩余的1-3个空格 → 保留（不替换）
+ */
+function optimizeSpacesAndTabs(input: string): string {
+    let result = '';
+    let spaceCount = 0;
+
+    for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (ch === ' ') {
+            spaceCount++;
+        } else if (ch === '\t') {
+            // 遇到制表符时，处理之前累积的空格
+            const tabs = Math.floor(spaceCount / 4);
+            result += '\t'.repeat(tabs);        // 每4个空格替换为1个制表符
+            // 剩余1-3个空格（如果有）因后面紧跟制表符，按规则2去除
+            result += '\t';                     // 保留当前的制表符
+            spaceCount = 0;
+        }
+    }
+
+    // 处理末尾剩余的空格
+    if (spaceCount > 0) {
+        const tabs = Math.floor(spaceCount / 4);
+        result += '\t'.repeat(tabs);
+        const rem = spaceCount % 4;
+        if (rem > 0) {
+            result += ' '.repeat(rem);          // 末尾剩余1-3个空格保留
+        }
+    }
+
+    return result;
 }
